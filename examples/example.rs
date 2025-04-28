@@ -2,6 +2,7 @@
 #![no_main]
 
 use core::{cell::{Cell, RefCell}, fmt::Error};
+use cortex_m::interrupt::Mutex;
 // pick a panicking behavior
 use panic_rtt_target as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
 // use panic_abort as _; // requires nightly
@@ -58,14 +59,14 @@ where
 {
     spi: Spi<SPI>,
     cs: Pin<G, P, Output<PushPull>>,
-    delay: &'a Cell<SysDelay>,
+    delay:&'a mut SysDelay,
 }
 
 impl<'a, SPI, const G: char, const P: u8> SpiDev<'a, SPI, G, P>
 where
     SPI: Instance,
 {
-    pub fn new(spi: Spi<SPI>, cs: Pin<G, P, Output<PushPull>>, delay: &'a Cell<SysDelay>) -> Self {
+    pub fn new(spi: Spi<SPI>, cs: Pin<G, P, Output<PushPull>>, delay:&'a mut SysDelay) -> Self {
         SpiDev { spi, cs, delay }
     }
 }
@@ -90,7 +91,7 @@ where
     }
 
     fn delay(&mut self, ms: u32) {
-        self.delay.borrow_mut().delay(ms.millis()); // Assuming 168 MHz clock speed
+        self.delay.delay(ms.millis()); // Assuming 168 MHz clock speed
     }
 }
 
@@ -123,21 +124,19 @@ fn main() -> ! {
 
     let spi1 = Spi::new(dp.SPI1, (clk, miso, mosi), mode, 5.MHz(), &clocks);
 
-    let delay = Cell::new(cp.SYST.delay(&clocks));
+    let mut spi_delay = cp.SYST.delay(&clocks);
 
 
-    let spi_device = SpiDev::new(spi1, cs, delay);
-    type SpiDeviceType<'a> = SpiDev<pac::SPI1, 'G', 3>;
+    let spi_device = SpiDev::new(spi1, cs, &mut spi_delay);
 
     let flash_info = FlashInfo::new(0xEF, 0x40, 0x17, 16 * 1024 * 1024, 4096);
-
-    let mut flash = Flash::<SpiDeviceType, 4096>::new(spi_device, flash_info);
-
+    
     info!("init flash...");
-    flash.init().unwrap();
+    let mut flash = Flash::new(spi_device, flash_info);
     info!("init flash done.");
+    
     loop {
         // Your application logic goes here
-        loop_delay.get_mut().delay(1.secs());
+        spi_delay.delay(1.secs());
     }
 }

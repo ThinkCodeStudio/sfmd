@@ -1,39 +1,40 @@
-pub(crate) enum WRITE_CMD {
-    WRITE_ENABLE = 0x06,
-    WRITE_DISABLE = 0x04,
-    WRIET_STATUS = 0x01,
-    PAGE_PROGRAM = 0x02,
+
+pub(crate) enum WriteCmd {
+    WriteEnable = 0x06,
+    WriteDisable = 0x04,
+    WrietStatus = 0x01,
+    PageProgram = 0x02,
 }
 
-pub(crate) enum READ_CMD {
-    STATUS_1 = 0x05,
-    STATUS_2 = 0x35,
-    DATA = 0x03,
-    FAST = 0x0B,
-    FAST_DUAL = 0x3B,
-    FAST_DUAL_IO = 0xBB,
+pub(crate) enum ReadCmd {
+    Status1 = 0x05,
+    Status2 = 0x35,
+    Data = 0x03,
+    Fast = 0x0B,
+    FastDual = 0x3B,
+    FastDualIo = 0xBB,
 }
-pub(crate) enum MODE_CMD {
-    POWER_DOWN = 0xB9,
-    HIGH_PERFORMANCE = 0xA3,
-    MODE_RESET = 0xFF,
-    RELEASE_POWER_DOWN = 0xAB,
-}
-
-pub(crate) enum ID_CMD {
-    DEVICE_ID = 0xAB,
-    MANUFACTURER = 0x90,
-    READ_UNIQUE = 0x4B,
-    JEDEC_ID = 0x9F,
+pub(crate) enum ModeCmd {
+    PowerDown = 0xB9,
+    HighPerformance = 0xA3,
+    ModeReset = 0xFF,
+    ReleasePowerDown = 0xAB,
 }
 
-pub(crate) enum ERASE_CMD {
-    BLOCK_64K = 0xD8,
-    BLOCK_32K = 0x52,
-    SECTOR_4K = 0x20,
-    CHIP = 0xC7, // C7h|60h
-    SUSPEND = 0x75,
-    RESUME = 0x7A,
+pub(crate) enum IdCmd {
+    DeviceId = 0xAB,
+    Manufacturer = 0x90,
+    ReadUnique = 0x4B,
+    JedecId = 0x9F,
+}
+
+pub(crate) enum EraseCmd {
+    Block64k = 0xD8,
+    Block32k = 0x52,
+    Sector4k = 0x20,
+    Chip = 0xC7, // C7h|60h
+    Suspend = 0x75,
+    Resume = 0x7A,
 }
 
 pub(crate) enum STATUS {

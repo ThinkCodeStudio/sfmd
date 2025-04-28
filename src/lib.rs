@@ -11,17 +11,17 @@ pub struct FlashInfo {
     manufacturer_id: u8,
     type_id: u8,
     capacity_id: u8,
-    size: usize,
+    capacity: usize,
     secter_size: u32,
 }
 
 impl FlashInfo {
-    pub fn new(manufacturer_id: u8, type_id: u8, capacity_id: u8, size: usize, secter_size: u32) -> Self {
+    pub fn new(manufacturer_id: u8, type_id: u8, capacity_id: u8, capacity: usize, secter_size: u32) -> Self {
         FlashInfo {
             manufacturer_id,
             type_id,
             capacity_id,
-            size,
+            capacity,
             secter_size,
         }
     }
@@ -30,7 +30,6 @@ impl FlashInfo {
 trait FlashOperations {
     fn erase_chip(&mut self) -> Result<(), Error>;
     fn erase(&mut self, address: u32, size: usize) -> Result<(), Error>;
-    fn erase_write(&mut self, address: u32, data: &[u8]) -> Result<(), Error>;
     fn write(&mut self, address: u32, data: &[u8]) -> Result<(), Error>;
     fn read_data(&mut self, address: u32, buffer: &mut [u8]) -> Result<(), Error>;
     fn read_status(&mut self) -> Result<u8, Error>;
