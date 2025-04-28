@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use core::{cell::{Cell, RefCell}, fmt::Error};
+use core::{cell::{Cell, RefCell}, error, fmt::Error};
 use cortex_m::interrupt::Mutex;
 // pick a panicking behavior
 use panic_rtt_target as _; // you can put a breakpoint on `rust_begin_unwind` to catch panics
@@ -11,9 +11,9 @@ use panic_rtt_target as _; // you can put a breakpoint on `rust_begin_unwind` to
 
 use cortex_m_rt::entry;
 
-use log::{Level, LevelFilter, Metadata, Record, debug, info};
+use log::{debug, error, info, Level, LevelFilter, Metadata, Record};
 use rtt_target::{rprintln, rtt_init_print};
-use sfmd_rs::{FlashInfo, flash, serial_interface::SerialInterface};
+use sfmd_rs::{flash, serial_interface::SerialInterface, FlashInfo, FlashOperations};
 use stm32f4xx_hal::{
     gpio::{Output, Pin, PushPull, Speed},
     hal::spi,
@@ -131,12 +131,28 @@ fn main() -> ! {
 
     let flash_info = FlashInfo::new(0xEF, 0x40, 0x17, 16 * 1024 * 1024, 4096);
     
-    info!("init flash...");
-    let mut flash = Flash::new(spi_device, flash_info);
-    info!("init flash done.");
     
+    const TEST_DATA_SIZE: usize = 4000;
+    let test_data = [0xAB_u8; TEST_DATA_SIZE];
+    let mut buffer = [0_u8; TEST_DATA_SIZE];
+    
+    info!("init flash...");
+    if let Ok(flash) =&mut Flash::new(spi_device, flash_info){
+        info!("init flash done.");
+        flash.erase(0, 4096).unwrap(); // ok
+        flash.write_data(0, &test_data).unwrap(); // error
+        flash.read_data(0, &mut buffer).unwrap(); // ok
+        if test_data == buffer {
+            info!("flash read and write ok.");
+        } else {
+            error!("flash read and write failed. read data: {:?}, write data: {:?}", &buffer[..8], &test_data[..8]);
+        }
+    }
+    else{
+        error!("flash init failed.");   
+    }
+
     loop {
-        // Your application logic goes here
         spi_delay.delay(1.secs());
     }
 }

@@ -100,19 +100,18 @@ where
             error!("Failed to write enable");
             return Err(Error);
         }
-
-        if let Ok(status) = self.read_status() {
+        if let Ok(status) = self.wait_busy() {
             if enable && (status & define::STATUS::WEL as u8) == 0 {
-                error!("Write enable failed");
+                error!("Write enable failed status: {:02X}", status);
                 Err(Error)
             } else if !enable && (status & define::STATUS::WEL as u8) != 0 {
-                error!("Write disable failed");
+                error!("Write disable failed status: {:02X}", status);
                 Err(Error)
             } else {
                 Ok(())
             }
         } else {
-            error!("Failed to read status register after write enable");
+            error!("Failed to wait for write enable operation to complete");
             Err(Error)
         }
     }
@@ -130,13 +129,15 @@ where
         return ret;
     }
 
-    fn wait_busy(&mut self) -> Result<(), Error> {
+    fn wait_busy(&mut self) -> Result<u8, Error> {
         // Wait for the flash to be ready
         let mut is_ok = false;
+        let mut ret_status = 0_u8;
         for _ in 0..50 {
             if let Ok(status) = self.read_status() {
                 if (status & define::STATUS::BUSY as u8) == 0 {
                     is_ok = true;
+                    ret_status = status;
                     break;
                 } else {
                     self.interface.delay(10);
@@ -147,7 +148,7 @@ where
         }
 
         if is_ok {
-            Ok(())
+            Ok(ret_status)
         } else {
             error!("Flash is busy for too long");
             Err(Error)
@@ -220,11 +221,11 @@ where
 
     fn erase(&mut self, address: u32, size: usize) -> Result<(), Error> {
         assert!(
-            size != self.flash_info.secter_size as usize,
+            size % self.flash_info.secter_size as usize == 0,
             "erase_size must be secter_size"
         );
         assert!(
-            address % self.flash_info.secter_size != 0,
+            address % self.flash_info.secter_size == 0,
             "address must be secter_size aligned"
         );
 
@@ -275,7 +276,7 @@ where
         })
     }
 
-    fn write(&mut self, address: u32, data: &[u8]) -> Result<(), Error> {
+    fn write_data(&mut self, address: u32, data: &[u8]) -> Result<(), Error> {
         let mut data_len = data.len();
         let mut offset = 0_usize;
         let get_send_data_len = |len: &mut usize| {
@@ -284,7 +285,7 @@ where
         loop {
             let send_data_len = get_send_data_len(&mut data_len);
             if self
-                .page_write(address + offset as u32, &data[offset..send_data_len])
+                .page_write(address + offset as u32, &data[offset..offset + send_data_len])
                 .is_err()
             {
                 error!(
