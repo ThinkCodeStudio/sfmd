@@ -1,7 +1,7 @@
 use core::fmt::Error;
 
 pub trait SerialInterface {
-    fn write(&mut self, cmd: &[u8])->Result<(), Error>;
+    fn write(&mut self, cmd: &[u8], cmd: Option<&[u8]>)->Result<(), Error>;
     fn write_and_read(&mut self, cmd: &[u8], rev: &mut [u8])->Result<(), Error>;
     fn delay(&mut self, ms: u32);
 }

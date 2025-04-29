@@ -75,9 +75,12 @@ impl<'a, SPI, const G: char, const P: u8> SerialInterface for SpiDev<'a, SPI, G,
 where
     SPI: Instance,
 {
-    fn write(&mut self, cmd: &[u8]) -> Result<(), core::fmt::Error> {
+    fn write(&mut self, cmd: &[u8], data:Option<&[u8]>) -> Result<(), core::fmt::Error> {
         self.cs.set_low();
         self.spi.write(cmd).unwrap();
+        if let Some(data) = data {
+            self.spi.write(data).unwrap();
+        }
         self.cs.set_high();
         Ok(())
     }
@@ -139,8 +142,8 @@ fn main() -> ! {
     info!("init flash...");
     if let Ok(flash) =&mut Flash::new(spi_device, flash_info){
         info!("init flash done.");
-        flash.erase(0, 4096).unwrap(); // ok
-        flash.write_data(0, &test_data).unwrap(); // error
+        // flash.erase(0, 4096).unwrap(); // ok
+        flash.write_data(0, &test_data).unwrap(); // ok
         flash.read_data(0, &mut buffer).unwrap(); // ok
         if test_data == buffer {
             info!("flash read and write ok.");

@@ -96,7 +96,7 @@ where
             [define::WriteCmd::WriteDisable as u8]
         };
 
-        if self.interface.write(&cmd).is_err() {
+        if self.interface.write(&cmd, None).is_err() {
             error!("Failed to write enable");
             return Err(Error);
         }
@@ -163,7 +163,7 @@ where
             } else {
                 [0xE9]
             };
-            if s.interface.write(&cmd).is_err() {
+            if s.interface.write(&cmd, None).is_err() {
                 error!("Failed to set 4-byte address mode");
                 return Err(Error);
             }
@@ -194,10 +194,7 @@ where
             s.make_address_byte_array(address, &mut cmd[1..]);
             let cmd_len = s.address_len() + 1;
 
-            if s.interface.write(&cmd[..cmd_len]).is_err() {
-                return Err(Error);
-            }
-            if s.interface.write(data).is_err() {
+            if s.interface.write(&cmd[..cmd_len], Some(data)).is_err() {
                 return Err(Error);
             }
             if s.wait_busy().is_err() {
@@ -215,7 +212,7 @@ where
     fn erase_chip(&mut self) -> Result<(), Error> {
         self.write_operation(|s| {
             let cmd = [define::EraseCmd::Chip as u8];
-            s.interface.write(&cmd)
+            s.interface.write(&cmd, None)
         })
     }
 
@@ -243,7 +240,7 @@ where
             while size > 0 {
                 s.make_address_byte_array(addr, &mut cmd[1..]);
                 let cmd_len = s.address_len() + 1;
-                if s.interface.write(&cmd[..cmd_len]).is_err() {
+                if s.interface.write(&cmd[..cmd_len], None).is_err() {
                     error!("Failed to erase block at address {:08X}", addr);
                     return Err(Error);
                 }
@@ -351,7 +348,7 @@ where
     fn write_state(&mut self, is_volatile: bool, state: u8) -> Result<(), Error> {
         self.write_operation(|s| {
             let cmd = [define::WriteCmd::WrietStatus as u8, state];
-            if s.interface.write(&cmd).is_err() {
+            if s.interface.write(&cmd, None).is_err() {
                 error!("Failed to write status register");
                 return Err(Error);
             }
